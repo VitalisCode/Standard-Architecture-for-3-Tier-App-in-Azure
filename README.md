@@ -1,56 +1,82 @@
-# Standard-Architecture-for-3-Tier-App-in-Azure
+# Enterprise 3-Tier Application Architecture on Azure
 
+A reference architecture for designing a **secure, highly available and scalable 3-tier application on Microsoft Azure** using a hub-and-spoke network model.
 
-I have decided to create an architectural design for a 3-Tier App on the Azure platform. You might have better ideas about this architecture.
+> **Focus:** Azure networking · Hub-and-spoke · Hybrid connectivity · Security · Identity · Monitoring · Backup
 
-The goal is to develop a highly available, secure, scalable, and cost-optimized web application running on the cloud.
+## Architecture
 
-Below is the detailed design explanation. Please review it.
+![Azure 3-Tier Application Architecture](https://user-images.githubusercontent.com/99427790/235126768-ed3d720c-8c83-4ed9-853e-883f70e3d9fb.png)
 
-![A Standard Architecture for 3-Tier App in Azure](https://user-images.githubusercontent.com/99427790/235126768-ed3d720c-8c83-4ed9-853e-883f70e3d9fb.png)
+## Design goals
 
+- Network isolation between environments
+- Controlled hybrid connectivity to on-premises infrastructure
+- Highly available application and identity services
+- Centralized security and secrets management
+- Centralized monitoring and diagnostics
+- Backup and operational recovery
+- Clear separation of management, development and production workloads
 
-## Steps:
+## Network topology
 
-#### Establish Network Topology:
-- Instead of having all our resources on one virtual network, I have chosen to use the Hub & Spoke Topology, also known as the Star topology. I will explain the reasons soon.
-- I have created several virtual networks and separated them into the Development and Production environments.
-- Additionally, I have created another Vnet, called Management environment, for shared services.
-- Vnet peering has been established to allow communication between the Development and Production environments.
+The design uses a **hub-and-spoke topology**:
 
+- **Management / Hub VNet** hosts shared services and centralized connectivity.
+- **Development Spoke** isolates development workloads.
+- **Production Spoke** isolates production workloads.
+- VNet peering provides controlled communication between the required network boundaries.
 
-#### Reasons for using Hub and Spoke topology:
-- Network Isolation: This topology allows us to establish isolation between the different tiers. For example, resources in the Development environment cannot communicate with those in the Production environment. This prevents unintended changes and issues in the Production environment.
-- Separation of Concerns: By making changes in the Development environment first, we can ensure that we do not impact users accessing our production environment. Once the changes or updates are validated in the Development environment, we can then apply them to the Production environment with a good understanding of the outcome.
-- Compliance: This topology also takes into consideration various compliances such as HIPAA, HITRUST, and PCI.
+This pattern supports separation of concerns and makes centralized security and connectivity services easier to manage.
 
+## Connectivity and security
 
-#### Subnets and Network Access:
-- Create public and private Vnet subnets for each environment.
-- Assign network security groups (NSGs) to each subnet. This allows only the incoming ports and protocols required by the application into the subnets.
-- Establish connectivity from our on-premises data center to the Azure environment.
-- Deploy a VPN Gateway on Azure and a local network gateway on-premises to establish an IPsec tunnel for secure communication.
-- Set up an Azure Bastion as the main point of ingress to the Azure environment for the operating system layer. Extend connectivity by allowing a public IP and configuring another NSG on the NIC. Also, allow port 22 in the NSG, specifying the source IP of the Engineer/Admin, and add any additional subnets from the on-premises data center, if applicable.
+### Hybrid connectivity
 
+- Azure VPN Gateway provides IPsec connectivity to the on-premises environment.
+- A local network gateway represents the on-premises network.
+- Azure Bastion provides controlled administrative access to virtual machines without exposing management ports directly to the internet.
 
-#### Deployment:
-- Deploy a set of Active Directory domain controllers to be used as an identity source. This will allow us to create user accounts for various engineers/admins and restrict access as necessary to various OS.
-- Deploy multiple domain controllers to ensure high availability.
-- Deploy Application Gateways, which are layer 7 load balancers that respond to HTTP/HTTPS requests.
-- Whitelist the Application Subnet in the database to allow communication between the application instances and the database.
-- Deploy a Storage Account to configure inspector and boot diagnostics on VMs across all environments. This allows us to view various logs sent to the storage account, troubleshoot issues with VMs, and generate reports.
+### Network controls
 
-Now, we need to secure, manage, and support our environment.
+- Public and private subnets are separated by workload role.
+- Network Security Groups restrict permitted traffic.
+- Application Gateway provides Layer 7 HTTP/HTTPS routing.
+- Database access is restricted to the application tier.
 
-- Deploy Azure Key Vault to securely store secrets and certificates, avoiding the exposure of sensitive information in source code.
-- For monitoring, deploy a Log Analytics Workspace and configure diagnostic settings for each of our Azure resources, including VMs and load balancers. Set these resources to send reports to the Log Analytics. Create metrics and log alerts for notification.
-- Create an Automation Account and link it to the analytics workspace. Use the update management feature to automatically onboard all VMs for automated patching. Set up schedules to ensure that VMs are updated automatically.
-- Deploy a Recovery Vault to enable backup for VMs. During the onboarding process, establish a backup policy to define how often backups should.
+### Identity and secrets
 
+- Multiple Active Directory domain controllers provide identity-service availability.
+- Azure Key Vault stores secrets and certificates rather than application source code.
 
-Now, that you have an idea about this Design, you could design yours in another simpler way or more complex.
+## Operations
 
-Thank you.
+The design includes:
 
-Let's keep learning and keep growing…
+- Log Analytics Workspace for centralized telemetry
+- Diagnostic settings for Azure resources
+- Metrics and log-based alerts
+- Automation for VM update management
+- Recovery Services Vault for VM backup and recovery policies
+- Storage Accounts for appropriate diagnostics and platform logs
 
+## Engineering considerations
+
+This is an architecture reference rather than a prescriptive production blueprint. The exact topology should be adapted to workload requirements, identity architecture, regulatory requirements, traffic patterns and operational ownership.
+
+Before implementation, validate routing, NSG rules, private connectivity, DNS, application dependencies, backup requirements and Azure service limits.
+
+## Technologies
+
+**Cloud:** Microsoft Azure  
+**Networking:** VNet · Hub-and-Spoke · VNet Peering · VPN Gateway · Azure Bastion · Application Gateway  
+**Security:** NSG · Azure Key Vault · Identity services  
+**Observability:** Azure Monitor · Log Analytics · Diagnostic Settings  
+**Operations:** Automation · Recovery Services Vault
+
+## Author
+
+**Vitalis Ibekwe**  
+Cloud · Platform · SRE · DevOps Engineer
+
+GitHub: https://github.com/VitalisCode
